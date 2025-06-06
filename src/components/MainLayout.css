@@ -1,0 +1,21 @@
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: sans-serif;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+}
+
+.content-container {
+  flex: 1;
+  max-width: 64rem;
+}
+
+.page-content {
+  padding: 1.5rem;
+}
