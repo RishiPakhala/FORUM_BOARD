@@ -12,7 +12,6 @@ const SavedPage = () => {
     posts: [],
     replies: [],
     trendingTopics: [],
-    trendingReplies: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -55,15 +54,13 @@ const SavedPage = () => {
             return { ...reply, parent: null, isTrendingTopic: false }; // Fallback
           }));
 
-          // Separate saved replies and trending replies after fetching parents
+          // Separate saved replies and categories after fetching parents
           const replies = savedRepliesWithParents.filter(item => item.parent && !item.isTrendingTopic);
-          const trendingReplies = savedRepliesWithParents.filter(item => item.parent && item.isTrendingTopic);
 
           setSavedItems({
             posts: response.data.posts || [],
             replies: replies,
             trendingTopics: response.data.trendingTopics || [],
-            trendingReplies: trendingReplies
           });
         }
       } catch (error) {
@@ -89,7 +86,7 @@ const SavedPage = () => {
         <h1 className="text-2xl font-bold mb-6">Saved Items</h1>
 
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="posts">
               Posts ({savedItems.posts.length})
             </TabsTrigger>
@@ -98,9 +95,6 @@ const SavedPage = () => {
             </TabsTrigger>
             <TabsTrigger value="trending">
               Trending Topics ({savedItems.trendingTopics.length})
-            </TabsTrigger>
-            <TabsTrigger value="trendingReplies">
-              Trending Replies ({savedItems.trendingReplies.length})
             </TabsTrigger>
           </TabsList>
 
@@ -139,24 +133,6 @@ const SavedPage = () => {
               ))
             ) : (
               <div className="text-center text-gray-500">No saved trending topics yet</div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="trendingReplies" className="mt-6">
-            {isLoading ? (
-              <div className="text-center">Loading saved trending replies...</div>
-            ) : savedItems.trendingReplies.length > 0 ? (
-              savedItems.trendingReplies.map(reply => (
-                <div key={reply._id} className="saved-reply-card">
-                  <ThreadCard 
-                    thread={reply.parent} 
-                    highlightedReplyId={reply.replyId}
-                    isTrendingTopic={true}
-                  />
-                </div>
-              ))
-            ) : (
-              <div className="text-center text-gray-500">No saved trending replies yet</div>
             )}
           </TabsContent>
         </Tabs>

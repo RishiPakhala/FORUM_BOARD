@@ -15,7 +15,8 @@ const {
   unsavePost,
   checkSavedPost,
   saveReply,
-  unsaveReply
+  unsaveReply,
+  checkReplySaved
 } = require('../controllers/postController');
 const auth = require('../middleware/authMiddleware');
 
@@ -42,6 +43,7 @@ router.post('/:postId/replies/:replyId/dislike', auth, toggleReplyDislike);
 // Save/Unsave reply routes
 router.post('/:postId/replies/:replyId/save', auth, saveReply);
 router.delete('/:postId/replies/:replyId/save', auth, unsaveReply);
+router.get('/:postId/replies/:replyId/saved', auth, checkReplySaved);
 
 // Save/Unsave post
 router.post('/:id/save', auth, savePost);

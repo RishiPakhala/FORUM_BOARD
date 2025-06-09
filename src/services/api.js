@@ -314,6 +314,15 @@ export const getSavedItems = () => {
   return api.get('/users/saved');
 };
 
+// Password Reset
+export const requestPasswordReset = async (email) => {
+  return await api.post('/auth/forgot-password', { email });
+};
+
+export const resetPassword = async (token, password) => {
+  return await api.post(`/auth/reset-password/${token}`, { password });
+};
+
 // Check if post is saved
 export const checkPostSaved = async (postId) => {
   return await api.get(`/posts/${postId}/saved`);
@@ -321,6 +330,7 @@ export const checkPostSaved = async (postId) => {
 
 // Check if reply is saved
 export const checkReplySaved = async (postId, replyId) => {
+  console.log('checkReplySaved called with postId:', postId, 'replyId:', replyId);
   return await api.get(`/posts/${postId}/replies/${replyId}/saved`);
 };
 

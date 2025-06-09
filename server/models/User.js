@@ -58,6 +58,8 @@ const userSchema = new mongoose.Schema({
     replyId: { type: mongoose.Schema.Types.ObjectId, ref: 'TrendingTopic.replies' },
     topicId: { type: mongoose.Schema.Types.ObjectId, ref: 'TrendingTopic' }
   }],
+  passwordResetToken: String,
+  passwordResetExpires: Date,
   createdAt: {
     type: Date,
     default: Date.now

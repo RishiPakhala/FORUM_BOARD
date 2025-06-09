@@ -14,7 +14,8 @@ const {
   saveTrendingTopic,
   unsaveTrendingTopic,
   saveTrendingReply,
-  unsaveTrendingReply
+  unsaveTrendingReply,
+  checkTrendingReplySaved
 } = require('../controllers/trendingController');
 const auth = require('../middleware/authMiddleware');
 
@@ -43,5 +44,6 @@ router.delete('/:id/save', auth, unsaveTrendingTopic);
 // Save/Unsave trending reply routes
 router.post('/:topicId/replies/:replyId/save', auth, saveTrendingReply);
 router.delete('/:topicId/replies/:replyId/save', auth, unsaveTrendingReply);
+router.get('/:topicId/replies/:replyId/saved', auth, checkTrendingReplySaved);
 
 module.exports = router;

@@ -453,56 +453,37 @@ const ThreadCard = ({ thread, onThreadUpdate }) => {
     }
 
     try {
-      const reply = threadData.replies.find(r => r._id === replyId);
-      if (!reply) {
-        throw new Error('Reply not found');
+      const replyToUpdate = threadData.replies.find(r => r._id === replyId);
+      if (!replyToUpdate) return;
+
+      console.log('ThreadCard - isTrendingTopic during handleReplySave:', isTrendingTopic, 'threadData._id:', threadData._id, 'replyId:', replyId);
+      let response;
+
+      if (isTrendingTopic) {
+        response = replyToUpdate.saved
+          ? await unsaveTrendingReply(threadData._id, replyId)
+          : await saveTrendingReply(threadData._id, replyId);
+      } else {
+        response = replyToUpdate.saved
+          ? await unsaveReply(threadData._id, replyId)
+          : await saveReply(threadData._id, replyId);
       }
 
-      // Update UI optimistically
-      const newSavedState = !reply.saved;
-      setThreadData(prevData => ({
-        ...prevData,
-        replies: prevData.replies.map(r => {
-          if (r._id === replyId) {
-            return { ...r, saved: newSavedState };
-          }
-          return r;
-        })
-      }));
-
-      // Make API call
-      let response;
-      try {
-        if (isTrendingTopic) {
-          response = newSavedState
-            ? await saveTrendingReply(threadData._id, replyId)
-            : await unsaveTrendingReply(threadData._id, replyId);
-        } else {
-          response = newSavedState
-            ? await saveReply(threadData._id, replyId)
-            : await unsaveReply(threadData._id, replyId);
-        }
-
-        if (!response?.data) {
-          throw new Error('No response from server');
-        }
-
-        toast({
-          title: "Success",
-          description: newSavedState ? "Reply saved successfully!" : "Reply removed from saved!",
-        });
-      } catch (error) {
-        // Revert UI state on error
+      if (response.data) {
         setThreadData(prevData => ({
           ...prevData,
           replies: prevData.replies.map(r => {
             if (r._id === replyId) {
-              return { ...r, saved: !newSavedState };
+              return { ...r, saved: !replyToUpdate.saved };
             }
             return r;
           })
         }));
-        throw error;
+
+        toast({
+          title: "Success",
+          description: replyToUpdate.saved ? "Reply removed from saved!" : "Reply saved successfully!",
+        });
       }
     } catch (error) {
       console.error('Error saving reply:', error);
@@ -623,6 +604,7 @@ const ThreadCard = ({ thread, onThreadUpdate }) => {
         if (threadData.replies && threadData.replies.length > 0) {
           const repliesPromises = threadData.replies.map(async reply => {
             try {
+              console.log('ThreadCard - isTrendingTopic during reply check:', isTrendingTopic, 'threadData._id:', threadData._id, 'reply._id:', reply._id);
               const replyResponse = isTrendingTopic
                 ? await checkTrendingReplySaved(threadData._id, reply._id)
                 : await checkReplySaved(threadData._id, reply._id);

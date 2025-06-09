@@ -91,7 +91,7 @@ const UserProfilePage = () => {
         </Header>
 
         {/* Profile Info */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-8">
+        <div className="rounded-xl p-6 mb-8 bg-card text-card-foreground border border-border">
           <div className="flex items-center gap-4 mb-4">
             <img
               src={avatar}

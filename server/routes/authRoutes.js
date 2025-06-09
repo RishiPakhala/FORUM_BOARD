@@ -6,13 +6,15 @@ const {
   getCurrentUser,
   updateProfile,
   changePassword,
-  getUserThreads
+  getUserThreads,
+  requestPasswordReset
 } = require('../controllers/authController');
 const auth = require('../middleware/authMiddleware');
 
 // Auth routes
 router.post('/register', register);
 router.post('/login', login);
+router.post('/forgot-password', requestPasswordReset);
 
 // Protected routes
 router.get('/me', auth, getCurrentUser);

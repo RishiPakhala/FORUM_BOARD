@@ -236,28 +236,40 @@ exports.addReply = async (req, res) => {
 exports.toggleLike = async (req, res) => {
   try {
     const topic = await TrendingTopic.findById(req.params.id);
-
     if (!topic) {
       return res.status(404).json({ error: 'Trending topic not found' });
     }
 
-    const likeIndex = topic.likes.indexOf(req.user._id);
-    if (likeIndex > -1) {
-      topic.likes.splice(likeIndex, 1);
+    const userId = req.user._id;
+    const userLiked = topic.likes.includes(userId);
+
+    let message;
+    if (userLiked) {
+      topic.likes.pull(userId);
+      message = 'Like removed';
     } else {
-      topic.likes.push(req.user._id);
-      // Remove from dislikes if exists
-      const dislikeIndex = topic.dislikes.indexOf(req.user._id);
-      if (dislikeIndex > -1) {
-        topic.dislikes.splice(dislikeIndex, 1);
-      }
+      // If user disliked, remove dislike first
+      topic.dislikes.pull(userId);
+      topic.likes.push(userId);
+      message = 'Post liked';
     }
 
-    // Update trending score after like/unlike
-    topic.calculateTrendingScore();
     await topic.save();
-    res.json(topic);
+
+    // Populate topic with updated likes/dislikes to send back correct counts
+    const updatedTopic = await TrendingTopic.findById(topic._id)
+      .populate('likes', 'name image')
+      .populate('dislikes', 'name image');
+
+    res.status(200).json({
+      likes: updatedTopic.likes.length,
+      dislikes: updatedTopic.dislikes.length,
+      userLiked: !userLiked, // Correctly reflect the new state
+      userDisliked: updatedTopic.dislikes.some(d => d._id.toString() === userId.toString()),
+      message,
+    });
   } catch (error) {
+    console.error('Error toggling like on trending topic:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -271,23 +283,38 @@ exports.toggleDislike = async (req, res) => {
       return res.status(404).json({ error: 'Trending topic not found' });
     }
 
-    const dislikeIndex = topic.dislikes.indexOf(req.user._id);
-    if (dislikeIndex > -1) {
-      topic.dislikes.splice(dislikeIndex, 1);
+    const userId = req.user._id;
+    const userDisliked = topic.dislikes.includes(userId);
+
+    let message;
+    if (userDisliked) {
+      topic.dislikes.pull(userId);
+      message = 'Dislike removed';
     } else {
-      topic.dislikes.push(req.user._id);
-      // Remove from likes if exists
-      const likeIndex = topic.likes.indexOf(req.user._id);
-      if (likeIndex > -1) {
-        topic.likes.splice(likeIndex, 1);
-      }
+      // If user liked, remove like first
+      topic.likes.pull(userId);
+      topic.dislikes.push(userId);
+      message = 'Post disliked';
     }
 
     // Update trending score after dislike/un-dislike
     topic.calculateTrendingScore();
     await topic.save();
-    res.json(topic);
+
+    // Populate topic with updated likes/dislikes to send back correct counts
+    const updatedTopic = await TrendingTopic.findById(topic._id)
+      .populate('likes', 'name image')
+      .populate('dislikes', 'name image');
+
+    res.status(200).json({
+      likes: updatedTopic.likes.length,
+      dislikes: updatedTopic.dislikes.length,
+      userLiked: updatedTopic.likes.some(l => l._id.toString() === userId.toString()),
+      userDisliked: !userDisliked, // Correctly reflect the new state
+      message,
+    });
   } catch (error) {
+    console.error('Error toggling dislike on trending topic:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -463,5 +490,47 @@ exports.unsaveTrendingReply = async (req, res) => {
   } catch (error) {
     console.error('Error unsaving trending reply:', error);
     res.status(500).json({ error: 'Failed to unsave trending reply' });
+  }
+};
+
+// Check if trending topic is saved
+exports.checkTrendingTopicSaved = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isSaved = user.savedTrendingTopics.some(item => item.toString() === id);
+
+    res.status(200).json({ saved: isSaved });
+  } catch (error) {
+    console.error('Error checking trending topic saved status:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Check if trending reply is saved
+exports.checkTrendingReplySaved = async (req, res) => {
+  try {
+    const { topicId, replyId } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isSaved = user.savedTrendingReplies.some(item =>
+      item.topicId.toString() === topicId && item.replyId.toString() === replyId
+    );
+
+    res.status(200).json({ saved: isSaved });
+  } catch (error) {
+    console.error('Error checking trending reply saved status:', error);
+    res.status(500).json({ error: error.message });
   }
 }; 

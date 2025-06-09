@@ -481,47 +481,78 @@ exports.checkSavedPost = async (req, res) => {
   }
 };
 
-// Save a reply
+// Save a reply to a post
 exports.saveReply = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { postId, replyId } = req.params;
+    const userId = req.user._id;
+
+    // Find the user and add the saved reply if not already present
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    // Store reply with parent post/topic ID for easier retrieval in Saved page
-    const replyRef = { replyId, postId }; // Assuming postId is the parent ID for replies in posts
-    if (!user.savedReplies.some(r => r.replyId.toString() === replyId.toString())) {
-      user.savedReplies.push(replyRef);
-      await user.save();
-      console.log(`Reply ${replyId} from post ${postId} saved for user ${userId}`);
-    } else {
-       console.log(`Reply ${replyId} from post ${postId} already saved for user ${userId}`);
+
+    const replyExists = user.savedReplies.some(item =>
+      item.postId.toString() === postId && item.replyId.toString() === replyId
+    );
+
+    if (replyExists) {
+      return res.status(200).json({ message: 'Reply already saved' });
     }
-    res.json({ message: 'Reply saved' });
+
+    user.savedReplies.push({ postId, replyId });
+    await user.save();
+
+    res.status(200).json({ message: 'Reply saved successfully!', saved: true });
   } catch (error) {
     console.error('Error saving reply:', error);
-    res.status(500).json({ error: 'Failed to save reply' });
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Unsave a reply
+// Unsave a reply from a post
 exports.unsaveReply = async (req, res) => {
   try {
+    const { postId, replyId } = req.params;
     const userId = req.user._id;
-    const { postId, replyId } = req.params; // Use replyId from params
+
+    // Find the user and remove the saved reply
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    // Filter out the reply based on replyId
-    user.savedReplies = user.savedReplies.filter(r => r.replyId.toString() !== replyId.toString());
+
+    user.savedReplies = user.savedReplies.filter(item =>
+      !(item.postId.toString() === postId && item.replyId.toString() === replyId)
+    );
     await user.save();
-     console.log(`Reply ${replyId} from post ${postId} unsaved for user ${userId}`);
-    res.json({ message: 'Reply unsaved' });
+
+    res.status(200).json({ message: 'Reply unsaved successfully!', saved: false });
   } catch (error) {
     console.error('Error unsaving reply:', error);
-    res.status(500).json({ error: 'Failed to unsave reply' });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Check if a reply is saved
+exports.checkReplySaved = async (req, res) => {
+  try {
+    const { postId, replyId } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isSaved = user.savedReplies.some(item =>
+      item.postId.toString() === postId && item.replyId.toString() === replyId
+    );
+
+    res.status(200).json({ saved: isSaved });
+  } catch (error) {
+    console.error('Error checking reply saved status:', error);
+    res.status(500).json({ error: error.message });
   }
 }; 

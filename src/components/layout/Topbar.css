@@ -69,12 +69,12 @@
 
 .nav-link:hover {
   color: hsl(var(--primary-foreground));
-  background: hsl(var(--primary) / 0.08);
+  background: hsl(var(--primary) / 0.99);
 }
 
 .nav-link.active {
   color: hsl(var(--primary-foreground));
-  background: hsl(var(--primary) / 0.15);
+  background: hsl(var(--primary) / 0.99);
   font-weight: 700;
 }
 

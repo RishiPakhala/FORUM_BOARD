@@ -8,6 +8,8 @@ import { toast } from "@/components/ui/use-toast";
 import Header from "../components/Header";
 import userAvatar from "../assets/user1.jpg";
 import { getPosts, createPost } from "../services/api";
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 
 const ThreadsPage = () => {
   const [threads, setThreads] = useState([]);
@@ -15,6 +17,7 @@ const ThreadsPage = () => {
   const [loading, setLoading] = useState(true);
   const editorRef = useRef(null);
   const navigate = useNavigate();
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -41,6 +44,26 @@ const ThreadsPage = () => {
 
   const formatText = (command, value) => {
     document.execCommand(command, false, value);
+  };
+
+  const onEmojiSelect = (emoji) => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents(); // Remove existing content
+        range.insertNode(document.createTextNode(emoji.native));
+        // Move cursor to the end of the inserted emoji
+        range.setStartAfter(range.endContainer);
+        range.setEndAfter(range.endContainer);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        // Fallback if no selection, append to end
+        editorRef.current.innerHTML += emoji.native;
+      }
+    }
+    setShowEmojiPicker(false); // Hide picker after selection
   };
 
   const handlePost = async () => {
@@ -139,9 +162,16 @@ const ThreadsPage = () => {
             
             <div className="flex justify-between items-center">
               <div className="flex gap-2">
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <Smile size={20} />
-                </Button>
+                <div className="relative">
+                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                    <Smile size={20} />
+                  </Button>
+                  {showEmojiPicker && (
+                    <div className="absolute z-10 bottom-full mb-2">
+                      <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
+                    </div>
+                  )}
+                </div>
                 <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
                   <Bold size={20} />
                 </Button>

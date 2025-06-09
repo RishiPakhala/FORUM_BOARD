@@ -19,6 +19,8 @@ import HelpPage from "./pages/HelpPage";
 import CategoryPage from "./pages/CategoryPage";
 import TopicPage from "./pages/TopicPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthGuard from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ const App = () => (
           <Route path="/create-community" element={<CommunityPage />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
           <Route path="/topic/:topicName" element={<TopicPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

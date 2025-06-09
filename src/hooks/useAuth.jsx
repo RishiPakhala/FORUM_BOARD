@@ -11,10 +11,33 @@ export const useAuth = () => {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      // Check if token exists in localStorage
+      setAuthState(prev => ({ ...prev, isLoading: true }));
+
       const token = localStorage.getItem('token');
-      
-      if (!token) {
+      const storedUser = localStorage.getItem('user');
+      const loginTimestamp = localStorage.getItem('loginTimestamp');
+      const currentTime = Date.now();
+      const twoMinutes = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+      if (token && loginTimestamp) {
+        // Check if session has expired based on timestamp
+        if (currentTime - parseInt(loginTimestamp, 10) > twoMinutes) {
+          console.log('Session expired based on timestamp. Logging out.');
+          // Session expired, clear all relevant localStorage items
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('loginTimestamp');
+          setAuthState({
+            user: null,
+            isLoggedIn: false,
+            isLoading: false,
+            error: 'Session expired'
+          });
+          return;
+        }
+      }
+
+      if (!token || !storedUser) {
         setAuthState({
           user: null,
           isLoggedIn: false,
@@ -25,9 +48,8 @@ export const useAuth = () => {
       }
       
       try {
-        // Verify token with backend
+        // If token and timestamp are valid, verify token with backend
         const response = await getCurrentUser();
-        
         setAuthState({
           user: response.data,
           isLoggedIn: true,
@@ -35,10 +57,11 @@ export const useAuth = () => {
           error: null
         });
       } catch (error) {
-        // If token is invalid, clear localStorage
+        console.log('Token validation failed with backend. Logging out.', error);
+        // If API call fails (e.g., token invalid for other reasons), clear localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        
+        localStorage.removeItem('loginTimestamp'); // Clear timestamp too
         setAuthState({
           user: null,
           isLoggedIn: false,
