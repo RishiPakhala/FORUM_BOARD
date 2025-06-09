@@ -16,25 +16,29 @@ export const useAuth = () => {
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
       const loginTimestamp = localStorage.getItem('loginTimestamp');
+      const lastActivityTimestamp = localStorage.getItem('lastActivityTimestamp');
       const currentTime = Date.now();
       const twoMinutes = 2 * 60 * 1000; // 2 minutes in milliseconds
 
-      if (token && loginTimestamp) {
-        // Check if session has expired based on timestamp
-        if (currentTime - parseInt(loginTimestamp, 10) > twoMinutes) {
-          console.log('Session expired based on timestamp. Logging out.');
-          // Session expired, clear all relevant localStorage items
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('loginTimestamp');
-          setAuthState({
-            user: null,
-            isLoggedIn: false,
-            isLoading: false,
-            error: 'Session expired'
-          });
-          return;
-        }
+      console.log('Auth Check Debug:');
+      console.log('Current Time:', new Date(currentTime).toLocaleString());
+      console.log('Last Activity:', lastActivityTimestamp ? new Date(parseInt(lastActivityTimestamp)).toLocaleString() : 'No activity');
+      console.log('Time Difference:', lastActivityTimestamp ? (currentTime - parseInt(lastActivityTimestamp)) / 1000 + ' seconds' : 'N/A');
+
+      // Check if user has been inactive for more than 2 minutes
+      if (lastActivityTimestamp && (currentTime - parseInt(lastActivityTimestamp, 10) > twoMinutes)) {
+        console.log('User inactive for more than 2 minutes. Logging out.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('loginTimestamp');
+        localStorage.removeItem('lastActivityTimestamp');
+        setAuthState({
+          user: null,
+          isLoggedIn: false,
+          isLoading: false,
+          error: 'Session expired due to inactivity'
+        });
+        return;
       }
 
       if (!token || !storedUser) {
@@ -58,10 +62,10 @@ export const useAuth = () => {
         });
       } catch (error) {
         console.log('Token validation failed with backend. Logging out.', error);
-        // If API call fails (e.g., token invalid for other reasons), clear localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        localStorage.removeItem('loginTimestamp'); // Clear timestamp too
+        localStorage.removeItem('loginTimestamp');
+        localStorage.removeItem('lastActivityTimestamp');
         setAuthState({
           user: null,
           isLoggedIn: false,
@@ -71,12 +75,44 @@ export const useAuth = () => {
       }
     };
 
+    // Update last activity timestamp on user interaction
+    const updateLastActivity = () => {
+      const newTimestamp = Date.now().toString();
+      console.log('Activity detected, updating timestamp:', new Date(newTimestamp).toLocaleString());
+      localStorage.setItem('lastActivityTimestamp', newTimestamp);
+    };
+
+    // Add event listeners for user activity
+    window.addEventListener('mousemove', updateLastActivity);
+    window.addEventListener('keydown', updateLastActivity);
+    window.addEventListener('click', updateLastActivity);
+    window.addEventListener('scroll', updateLastActivity);
+
+    // Set initial last activity timestamp
+    if (localStorage.getItem('token')) {
+      const initialTimestamp = Date.now().toString();
+      console.log('Setting initial activity timestamp:', new Date(initialTimestamp).toLocaleString());
+      localStorage.setItem('lastActivityTimestamp', initialTimestamp);
+    }
+
     checkAuthStatus();
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('mousemove', updateLastActivity);
+      window.removeEventListener('keydown', updateLastActivity);
+      window.removeEventListener('click', updateLastActivity);
+      window.removeEventListener('scroll', updateLastActivity);
+    };
   }, []);
 
   const login = (userData, token) => {
+    const currentTime = Date.now().toString();
+    console.log('Login - Setting timestamps:', new Date(currentTime).toLocaleString());
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('loginTimestamp', currentTime);
+    localStorage.setItem('lastActivityTimestamp', currentTime);
     
     setAuthState({
       user: userData,
@@ -87,8 +123,11 @@ export const useAuth = () => {
   };
 
   const logout = () => {
+    console.log('Logout - Clearing all timestamps');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('loginTimestamp');
+    localStorage.removeItem('lastActivityTimestamp');
     
     setAuthState({
       user: null,

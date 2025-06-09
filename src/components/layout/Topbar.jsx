@@ -36,6 +36,8 @@ const Topbar = ({ isLoggedIn = false, onLoginStatusChange }) => {
   const handleLogoutClick = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('loginTimestamp');
+    localStorage.removeItem('lastActivityTimestamp');
     setUser(null);
     
     if (onLoginStatusChange) {
