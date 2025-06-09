@@ -1,17 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "../components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import Header from "../components/Header";
+import { createCommunity, getCommunities } from "../services/api";
+import { useNavigate } from "react-router-dom";
+import { Lock, Users } from "lucide-react";
 import "./CommunityPage.css";
 
 const CommunityPage = () => {
   const [communityName, setCommunityName] = useState("");
   const [communityDescription, setCommunityDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [communities, setCommunities] = useState([]);
+  const [loadingCommunities, setLoadingCommunities] = useState(true);
+  const navigate = useNavigate();
 
-  const handleCreateCommunity = (e) => {
+  useEffect(() => {
+    fetchCommunities();
+  }, []);
+
+  const fetchCommunities = async () => {
+    setLoadingCommunities(true);
+    try {
+      const response = await getCommunities();
+      setCommunities(response.data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to fetch communities",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingCommunities(false);
+    }
+  };
+
+  const handleCreateCommunity = async (e) => {
     e.preventDefault();
     
     if (!communityName || !communityDescription) {
@@ -22,12 +50,43 @@ const CommunityPage = () => {
       });
       return;
     }
+
+    setIsSubmitting(true);
     
-    // In a real app, we would create the community in the database
-    toast({
-      title: "Feature in development",
-      description: "Sorry #PeopleSpeech, community feature not yet available, but don't worry, this feature is being worked on by professional developers.",
-    });
+    try {
+      const response = await createCommunity({
+        name: communityName,
+        description: communityDescription,
+        isPrivate,
+      });
+      
+      toast({
+        title: "Community Created!",
+        description: `Community "${response.data.name}" has been created.`, 
+      });
+      
+      // Refresh the list of communities and redirect
+      fetchCommunities();
+      navigate(`/community/${response.data._id}`);
+
+      // Reset form (though redirection will handle this)
+      setCommunityName("");
+      setCommunityDescription("");
+      setIsPrivate(false);
+    } catch (error) {
+      console.error('Error creating community:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to create community. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCommunityClick = (communityId) => {
+    navigate(`/community/${communityId}`);
   };
 
   return (
@@ -45,16 +104,36 @@ const CommunityPage = () => {
           You can join the community you want to discuss with anyone, anywhere, and anytime.
         </p>
         
-        <div className="community-notice">
-          <div className="community-notice-content">
-            <span className="community-notice-icon">💬</span>
-            <h2 className="community-notice-title">Nothing Community</h2>
-            <p className="community-notice-text">
-              sorry #PeopleSpeech, community feature not yet available, but don't worry, this feature is being worked on by professional developers. see you again...
-            </p>
-          </div>
-        </div>
-        
+        <section className="existing-communities-section">
+          <h2 className="text-2xl font-semibold mb-4">Existing Communities</h2>
+          {loadingCommunities ? (
+            <div className="text-center py-4">Loading communities...</div>
+          ) : communities.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {communities.map((community) => (
+                <div 
+                  key={community._id} 
+                  className="bg-gray-800 p-4 rounded-lg shadow-md cursor-pointer hover:bg-gray-700 transition-colors duration-200"
+                  onClick={() => handleCommunityClick(community._id)}
+                >
+                  <h3 className="font-medium text-white text-lg mb-2">{community.name}</h3>
+                  <p className="text-sm text-gray-400 mb-3">{community.description}</p>
+                  <div className="flex items-center text-xs text-gray-500">
+                    {community.isPrivate ? (
+                      <><Lock className="h-3 w-3 mr-1" /> Private</>
+                    ) : (
+                      <><Users className="h-3 w-3 mr-1" /> Public</>
+                    )}
+                    <span className="ml-auto">Members: {community.members.length}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-400">No communities found. Be the first to create one!</p>
+          )}
+        </section>
+
         <div className="create-community-section">
           <h2 className="create-community-title">Create a New Community</h2>
           
@@ -76,7 +155,7 @@ const CommunityPage = () => {
               <label htmlFor="community-description" className="field-label">
                 Community Description *
               </label>
-              <textarea
+              <Textarea
                 id="community-description"
                 value={communityDescription}
                 onChange={(e) => setCommunityDescription(e.target.value)}
@@ -105,8 +184,9 @@ const CommunityPage = () => {
             <Button 
               type="submit"
               className="create-button"
+              disabled={isSubmitting}
             >
-              Create Community
+              {isSubmitting ? "Creating..." : "Create Community"}
             </Button>
           </form>
         </div>

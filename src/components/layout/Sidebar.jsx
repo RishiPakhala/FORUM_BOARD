@@ -1,15 +1,74 @@
 import { Link, useNavigate } from "react-router-dom";
-import { CATEGORIES } from "../../data/mockData";
-import { Users } from "lucide-react";
+import { Users, LayoutDashboard } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import "./Sidebar.css";
 import logo from "../../assets/logo.png";
 import instagramIcon from "../../assets/instagram.jpg"; 
 import twitterIcon from "../../assets/twitter.png"; 
 import telegramIcon from "../../assets/telegram.png"; 
+import { useState, useEffect } from "react";
+import { getDistinctCategories } from "../../services/api"; // Import the new API function
 
 const Sidebar = ({ isLoggedIn }) => {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]); // Initialize with empty array
+  const [currentUser, setCurrentUser] = useState(null); // Add state for current user
+
+  // Fetch current user on component mount or isLoggedIn change
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, [isLoggedIn]);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getDistinctCategories();
+        console.log("Fetched distinct categories from backend (Sidebar):", response.data);
+        // Map the category strings to objects with a name and a random color
+        const fetchedCategories = response.data.map(name => {
+          const colors = ['bg-[#a5d6a7]', 'bg-[#f8bbd0]', 'bg-[#b39ddb]', 'bg-[#90caf9]', 'bg-[#ffe082]', 'bg-[#ef9a9a]'];
+          const randomColor = colors[Math.floor(Math.random() * colors.length)];
+          return { name: name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(), color: randomColor };
+        });
+        console.log("Processed categories for sidebar display:", fetchedCategories);
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load categories",
+          variant: "destructive",
+        });
+      }
+    };
+    fetchCategories();
+  }, []); // Run once on mount
+
+  // Listen for new category events
+  useEffect(() => {
+    const handleNewCategory = (event) => {
+      const newCategory = event.detail;
+      console.log("Sidebar received newCategory event:", newCategory);
+      setCategories(prevCategories => {
+        const exists = prevCategories.some(cat => cat.name.toLowerCase() === newCategory.toLowerCase());
+        if (!exists) {
+          const colors = ['bg-[#a5d6a7]', 'bg-[#f8bbd0]', 'bg-[#b39ddb]', 'bg-[#90caf9]', 'bg-[#ffe082]', 'bg-[#ef9a9a]'];
+          const randomColor = colors[Math.floor(Math.random() * colors.length)];
+          console.log("Adding new category to sidebar:", { name: newCategory.charAt(0).toUpperCase() + newCategory.slice(1).toLowerCase(), color: randomColor });
+          return [...prevCategories, { name: newCategory.charAt(0).toUpperCase() + newCategory.slice(1).toLowerCase(), color: randomColor }];
+        }
+        console.log("Category already exists in sidebar, not adding:", newCategory);
+        return prevCategories;
+      });
+    };
+
+    window.addEventListener('newCategory', handleNewCategory);
+    return () => window.removeEventListener('newCategory', handleNewCategory);
+  }, []);
 
   const handleAuthLink = (e, destination, actionName) => {
     if (!isLoggedIn) {
@@ -69,12 +128,24 @@ const Sidebar = ({ isLoggedIn }) => {
           </div>
           <span>Saved</span>
         </Link>
+        {currentUser && currentUser.role === 'admin' && (
+          <Link 
+            to="/admin" 
+            className="sidebar-link"
+            onClick={(e) => handleAuthLink(e, "/admin", "access the admin dashboard")}
+          >
+            <div className="sidebar-icon">
+              <LayoutDashboard size={18} />
+            </div>
+            <span>Admin Dashboard</span>
+          </Link>
+        )}
       </nav>
 
       <div className="sidebar-categories">
         <h3 className="sidebar-heading">Categories</h3>
         <div className="category-list">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <Link 
               key={category.name}
               to={`/category/${category.name.toLowerCase()}`}
@@ -107,16 +178,12 @@ const Sidebar = ({ isLoggedIn }) => {
 
 const getCategoryColor = (colorClass) => {
   const colors = {
-    'red': '#ef4444',
-    'blue': '#3b82f6',
-    'green': '#22c55e',
-    'yellow': '#eab308',
-    'purple': '#a855f7',
-    'pink': '#ec4899',
-    'indigo': '#6366f1',
-    'teal': '#14b8a6',
-    'orange': '#f97316',
-    'gray': '#6b7280'
+    'bg-[#a5d6a7]': '#a5d6a7',
+    'bg-[#f8bbd0]': '#f8bbd0',
+    'bg-[#b39ddb]': '#b39ddb',
+    'bg-[#90caf9]': '#90caf9',
+    'bg-[#ffe082]': '#ffe082',
+    'bg-[#ef9a9a]': '#ef9a9a'
   };
   return colors[colorClass] || '#6b7280';
 };

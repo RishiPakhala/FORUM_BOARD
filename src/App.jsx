@@ -18,10 +18,14 @@ import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
 import CategoryPage from "./pages/CategoryPage";
 import TopicPage from "./pages/TopicPage";
+import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthGuard from "./components/AuthGuard";
+import AdminAuthGuard from "./components/AdminAuthGuard";
+import CommunityDetailsPage from "./pages/CommunityDetailsPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
 
 const queryClient = new QueryClient();
 
@@ -44,11 +48,14 @@ const App = () => (
           <Route path="/saved" element={<SavedPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/help" element={<HelpPage />} />
-          <Route path="/create-community" element={<CommunityPage />} />
+          <Route path="/community" element={<CommunityPage />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
           <Route path="/topic/:topicName" element={<TopicPage />} />
+          <Route path="/admin" element={<AdminAuthGuard><AdminPage /></AdminAuthGuard>} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/community/:id" element={<CommunityDetailsPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

@@ -154,13 +154,13 @@ export const createPost = async (postData) => {
 
   const response = await api.post('/posts', {
     ...postData,
-    author: user.id
+    author: user._id
   });
 
   // Update the user's threads in localStorage if needed
   try {
     // Fetch updated user content to ensure we have the latest data
-    const userContent = await api.get(`/users/${user.id}/content`);
+    const userContent = await api.get(`/users/${user._id}/content`);
     const updatedThreads = userContent.data.threads || [];
     localStorage.setItem('userThreads', JSON.stringify(updatedThreads));
   } catch (error) {
@@ -342,6 +342,78 @@ export const checkTrendingTopicSaved = async (topicId) => {
 // Check if trending reply is saved
 export const checkTrendingReplySaved = async (topicId, replyId) => {
   return await api.get(`/trending/${topicId}/replies/${replyId}/saved`);
+};
+
+export const getTrendingReplyDislike = (topicId, replyId) => {
+  return api.post(`/trending/${topicId}/replies/${replyId}/dislike`);
+};
+
+export const getDistinctCategories = () => {
+  return api.get('/posts/categories/distinct');
+};
+
+// Admin API functions
+export const getAllUsers = () => {
+  return api.get('/users/all');
+};
+
+export const deleteUser = (userId) => {
+  return api.delete(`/users/${userId}`);
+};
+
+export const getAllPosts = () => {
+  return api.get('/posts/all');
+};
+
+export const updateUserRole = (userId, roleData) => {
+  return api.patch(`/users/${userId}/role`, roleData);
+};
+
+// Contact APIs
+export const submitContactMessage = (messageData) => {
+  return api.post('/contact', messageData);
+};
+
+export const getContactMessages = (params) => {
+  return api.get('/contact/all', { params });
+};
+
+export const markMessageAsRead = (messageId) => {
+  return api.patch(`/contact/${messageId}/read`);
+};
+
+export const markMessageAsReplied = (messageId) => {
+  return api.patch(`/contact/${messageId}/replied`);
+};
+
+export const deleteContactMessage = (messageId) => {
+  return api.delete(`/contact/${messageId}`);
+};
+
+// Community APIs
+export const createCommunity = (communityData) => {
+  return api.post('/communities', communityData);
+};
+
+export const getCommunities = () => {
+  return api.get('/communities');
+};
+
+export const getCommunityById = (id) => {
+  return api.get(`/communities/${id}`);
+};
+
+export const addCommunityMember = (communityId, memberData) => {
+  return api.patch(`/communities/${communityId}/add-member`, memberData);
+};
+
+export const removeCommunityMember = (communityId, memberData) => {
+  return api.patch(`/communities/${communityId}/remove-member`, memberData);
+};
+
+// Search API
+export const search = (query) => {
+  return api.get(`/search?q=${encodeURIComponent(query)}`);
 };
 
 export default api; 

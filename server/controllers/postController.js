@@ -56,6 +56,20 @@ exports.getPosts = async (req, res) => {
   }
 };
 
+// Admin - Get all posts (without filtering by status or category)
+exports.getAllPosts = async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate('author', 'name image')
+      .populate('replies.author', 'name image')
+      .sort({ createdAt: -1 }); // Sort by latest
+    res.json(posts);
+  } catch (error) {
+    console.error('Error fetching all posts for admin:', error);
+    res.status(500).json({ error: 'Failed to fetch all posts' });
+  }
+};
+
 // Get a single post by ID
 exports.getPost = async (req, res) => {
   try {
@@ -84,10 +98,13 @@ exports.createPost = async (req, res) => {
   try {
     const { title, content, category } = req.body;
 
+    // Normalize category to lowercase before saving
+    const normalizedCategory = category.toLowerCase();
+
     const post = new Post({
       title,
       content,
-      category,
+      category: normalizedCategory,
       author: req.user._id
     });
 
@@ -149,13 +166,36 @@ exports.deletePost = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Check if user is the author
-    if (post.author.toString() !== req.user._id.toString()) {
+    // Check if user is the author or an admin
+    if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await post.remove();
+    await post.deleteOne();
+
+    // Remove the post reference from the user's threads array
+    await User.findByIdAndUpdate(
+      post.author,
+      { $pull: { threads: post._id } },
+      { new: true }
+    );
+
     res.json({ message: 'Post removed' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get all distinct categories
+exports.getDistinctCategories = async (req, res) => {
+  try {
+    const categories = await Post.aggregate([
+      { $project: { category: { $toLower: "$category" } } },
+      { $group: { _id: "$category" } },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, name: "$_id" } }
+    ]);
+    res.json(categories.map(cat => cat.name));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

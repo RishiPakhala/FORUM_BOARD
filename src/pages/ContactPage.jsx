@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
-import api from "../services/api";
+import { submitContactMessage } from "../services/api";
 import "./ContactPage.css";
 
 const ContactPage = () => {
@@ -34,12 +34,11 @@ const ContactPage = () => {
     
     try {
       // Send contact form data to backend
-      await api.post('/contact', {
+      await submitContactMessage({
         name,
         email,
         subject,
         message,
-        submittedAt: new Date()
       });
       
       toast({

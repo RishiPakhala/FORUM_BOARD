@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import Header from "../components/Header";
 import userAvatar from "../assets/user1.jpg";
-import { getPosts, createPost } from "../services/api";
+import { getPosts, createPost, getDistinctCategories } from "../services/api";
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 
@@ -18,6 +18,8 @@ const ThreadsPage = () => {
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('general');
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -25,11 +27,12 @@ const ThreadsPage = () => {
       setCurrentUser(JSON.parse(storedUser));
     }
     fetchThreads();
+    fetchAvailableCategories();
   }, []);
 
   const fetchThreads = async () => {
     try {
-      const response = await getPosts();
+      const response = await getPosts({ category: 'general' });
       setThreads(response.data.posts);
     } catch (error) {
       toast({
@@ -42,6 +45,23 @@ const ThreadsPage = () => {
     }
   };
 
+  const fetchAvailableCategories = async () => {
+    try {
+      const response = await getDistinctCategories();
+      console.log("Fetched distinct categories from backend:", response.data);
+      const uniqueCategories = ['general', ...new Set(response.data.filter(cat => cat.toLowerCase() !== 'general'.toLowerCase()).map(cat => cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()))];
+      console.log("Processed categories for dropdown:", uniqueCategories);
+      setCategories(uniqueCategories);
+    } catch (error) {
+      console.error("Failed to fetch distinct categories:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load categories for selection",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatText = (command, value) => {
     document.execCommand(command, false, value);
   };
@@ -51,19 +71,17 @@ const ThreadsPage = () => {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        range.deleteContents(); // Remove existing content
+        range.deleteContents();
         range.insertNode(document.createTextNode(emoji.native));
-        // Move cursor to the end of the inserted emoji
         range.setStartAfter(range.endContainer);
         range.setEndAfter(range.endContainer);
         selection.removeAllRanges();
         selection.addRange(range);
       } else {
-        // Fallback if no selection, append to end
         editorRef.current.innerHTML += emoji.native;
       }
     }
-    setShowEmojiPicker(false); // Hide picker after selection
+    setShowEmojiPicker(false);
   };
 
   const handlePost = async () => {
@@ -88,20 +106,31 @@ const ThreadsPage = () => {
     }
 
     try {
+      const normalizedSelectedCategory = selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1).toLowerCase();
+      
       const postData = {
         title: `Thread by ${currentUser.name}`,
         content: content,
-        category: "general",
+        category: normalizedSelectedCategory.toLowerCase(),
         author: currentUser._id || currentUser.id
       };
 
       const response = await createPost(postData);
       const newThread = response.data;
 
-      // Add the new thread to the list
+      if (normalizedSelectedCategory === 'general') {
       setThreads(prevThreads => [newThread, ...prevThreads]);
+      }
 
-      // Clear the editor
+      if (normalizedSelectedCategory !== 'general' && !categories.some(cat => cat.toLowerCase() === normalizedSelectedCategory.toLowerCase())) {
+        console.log("Dispatching newCategory event:", normalizedSelectedCategory);
+        const event = new CustomEvent('newCategory', {
+          detail: normalizedSelectedCategory
+        });
+        window.dispatchEvent(event);
+        setCategories(prevCategories => [...prevCategories, normalizedSelectedCategory]);
+      }
+
       if (editorRef.current) {
         editorRef.current.innerHTML = "";
       }
@@ -111,10 +140,8 @@ const ThreadsPage = () => {
         description: "Your thread has been created!",
       });
 
-      // Trigger a refresh of the profile page data
       const profileDataEvent = new CustomEvent('profileDataUpdate');
       window.dispatchEvent(profileDataEvent);
-
     } catch (error) {
       toast({
         title: "Error",
@@ -131,7 +158,6 @@ const ThreadsPage = () => {
           <p>Create and explore discussions with the community</p>
         </Header>
 
-        {/* Login Button for non-authenticated users */}
         {!currentUser && (
           <button
             onClick={() => navigate('/login')}
@@ -141,7 +167,6 @@ const ThreadsPage = () => {
           </button>
         )}
 
-        {/* Create Post Area */}
         {currentUser && (
           <div className="mb-8">
             <div className="flex items-start gap-2 mb-3">
@@ -187,6 +212,17 @@ const ThreadsPage = () => {
                 <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
                   <Link2 size={20} />
                 </Button>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="ml-2 bg-gray-800 text-white border border-gray-700 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
               </div>
               <Button onClick={handlePost} className="bg-blue-500 hover:bg-blue-600">
                 POST
@@ -195,7 +231,6 @@ const ThreadsPage = () => {
           </div>
         )}
 
-        {/* Threads List */}
         {loading ? (
           <div className="text-center py-8">Loading threads...</div>
         ) : (
@@ -205,8 +240,8 @@ const ThreadsPage = () => {
                 <ThreadCard key={thread._id} thread={thread} />
               ))
             ) : (
-              <div className="text-center py-8 text-gray-400">
-                No threads yet. Be the first to start a conversation!
+              <div className="text-center py-8">
+                <p>No threads yet. Be the first to start a discussion!</p>
               </div>
             )}
           </div>

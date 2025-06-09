@@ -20,6 +20,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
+    // Update lastActiveAt timestamp
+    user.lastActiveAt = Date.now();
+    await user.save();
+
     // Add user to request
     req.user = user;
     next();

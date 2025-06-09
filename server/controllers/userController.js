@@ -1,6 +1,43 @@
 const User = require('../models/User');
 const Post = require('../models/Post');
 
+// Admin - Get all users
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password'); // Exclude passwords
+    console.log("Users fetched for admin dashboard (lastActiveAt):");
+    users.forEach(user => {
+      console.log(`  ${user.email}: ${user.lastActiveAt}`);
+    });
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+// Admin - Delete a user
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Delete the user's posts
+    await Post.deleteMany({ author: userId });
+
+    // Delete the user from the database
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User and their posts deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
 // Get user's content (threads and responses)
 exports.getUserContent = async (req, res) => {
   try {
@@ -165,5 +202,41 @@ exports.getSavedItems = async (req, res) => {
   } catch (error) {
     console.error('Error fetching saved items:', error);
     res.status(500).json({ error: 'Failed to fetch saved items' });
+  }
+};
+
+// Admin - Update a user's role
+exports.updateUserRole = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { role } = req.body;
+
+    if (!role || !['user', 'moderator', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role provided.' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const oldRole = user.role;
+    user.role = role;
+    await user.save();
+
+    // Log the admin action
+    const adminController = require('./adminController');
+    await adminController.logAdminAction(
+      req.user._id,
+      'user_management',
+      `Updated user ${user.email} role from ${oldRole} to ${role}`,
+      { targetUserId: user._id, oldRole, newRole: role }
+    );
+
+    res.json({ message: `User ${user.email} role updated to ${role}.`, user });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ error: 'Failed to update user role' });
   }
 }; 

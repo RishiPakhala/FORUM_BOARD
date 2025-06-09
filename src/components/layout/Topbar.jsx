@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, LogIn, LogOut } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import "./Topbar.css";
-import ThemeToggle from '../ui/ThemeToggle';
+import ThemeToggle from "../ui/ThemeToggle";
+import { search as searchApi } from "../../services/api";
 
 const Topbar = ({ isLoggedIn = false, onLoginStatusChange }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,6 +53,12 @@ const Topbar = ({ isLoggedIn = false, onLoginStatusChange }) => {
     navigate("/");
   };
 
+  const handleSearch = (e) => {
+    if (e.key === "Enter" && searchQuery.trim() !== "") {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   return (
     <div className="topbar">
       <div className="search-container">
@@ -62,6 +69,7 @@ const Topbar = ({ isLoggedIn = false, onLoginStatusChange }) => {
             placeholder="Explore..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
             className="search-input"
           />
         </div>

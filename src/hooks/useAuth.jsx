@@ -77,9 +77,9 @@ export const useAuth = () => {
 
     // Update last activity timestamp on user interaction
     const updateLastActivity = () => {
-      const newTimestamp = Date.now().toString();
+      const newTimestamp = Date.now(); // Get timestamp as a number
       console.log('Activity detected, updating timestamp:', new Date(newTimestamp).toLocaleString());
-      localStorage.setItem('lastActivityTimestamp', newTimestamp);
+      localStorage.setItem('lastActivityTimestamp', newTimestamp.toString()); // Store as string in localStorage
     };
 
     // Add event listeners for user activity

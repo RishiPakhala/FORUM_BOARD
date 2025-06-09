@@ -16,14 +16,23 @@ const {
   checkSavedPost,
   saveReply,
   unsaveReply,
-  checkReplySaved
+  checkReplySaved,
+  getDistinctCategories,
+  getAllPosts
 } = require('../controllers/postController');
 const auth = require('../middleware/authMiddleware');
+const admin = require('../middleware/adminMiddleware');
 
 // Get all posts and create post
 router.route('/')
   .get(getPosts)
   .post(auth, createPost);
+
+// Admin - Get all posts
+router.get('/all', auth, admin, getAllPosts);
+
+// New route to get distinct categories
+router.get('/categories/distinct', getDistinctCategories);
 
 // Get, update and delete specific post
 router.route('/:id')
