@@ -730,35 +730,7 @@ const ThreadCard = ({ thread, onThreadUpdate }) => {
             rows={3}
           />
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex items-center gap-1 p-1 rounded-md emoji-toolbar" style={{ backgroundColor: 'hsl(var(--card))' }}>
-              <button
-                onClick={() => handleFormat('bold')}
-                className="p-1 hover:bg-gray-700 rounded"
-                title="Bold"
-              >
-                <Bold size={16} />
-              </button>
-              <button
-                onClick={() => handleFormat('italic')}
-                className="p-1 hover:bg-gray-700 rounded"
-                title="Italic"
-              >
-                <Italic size={16} />
-              </button>
-              <button
-                onClick={() => handleFormat('bullet')}
-                className="p-1 hover:bg-gray-700 rounded"
-                title="Bullet List"
-              >
-                <List size={16} />
-              </button>
-              <button
-                onClick={() => handleFormat('number')}
-                className="p-1 hover:bg-gray-700 rounded"
-                title="Numbered List"
-              >
-                <ListOrdered size={16} />
-              </button>
+            <div className="flex items-center gap-1 p-1 rounded-md emoji-toolbar" style={{ backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))' }}>
               <button
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 className="p-1 hover:bg-gray-700 rounded"

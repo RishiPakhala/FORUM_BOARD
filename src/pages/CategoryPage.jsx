@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
 import ThreadCard, { LoginButton } from "../components/ThreadCard";
-import { Smile, Bold, Italic, List, ListOrdered, Link2 } from "lucide-react";
+import { Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import Header from "../components/Header";
@@ -166,21 +166,6 @@ const CategoryPage = () => {
               <div className="formatting-buttons">
                 <button className="format-button">
                   <Smile size={20} />
-                </button>
-                <button className="format-button">
-                  <Bold size={20} />
-                </button>
-                <button className="format-button">
-                  <Italic size={20} />
-                </button>
-                <button className="format-button">
-                  <List size={20} />
-                </button>
-                <button className="format-button">
-                  <ListOrdered size={20} />
-                </button>
-                <button className="format-button">
-                  <Link2 size={20} />
                 </button>
               </div>
               

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Smile, Bold, Italic, List, ListOrdered, Link as LinkIcon } from 'lucide-react';
+import { Smile } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
@@ -99,46 +99,6 @@ const TextEditor = ({ value, onChange, isResponse = false }) => {
             />
           </PopoverContent>
         </Popover>
-
-        <button
-          onClick={() => insertFormat('bold')}
-          className="text-gray-400 hover:text-white transition-colors"
-          title="Bold"
-        >
-          <Bold size={20} />
-        </button>
-
-        <button
-          onClick={() => insertFormat('italic')}
-          className="text-gray-400 hover:text-white transition-colors"
-          title="Italic"
-        >
-          <Italic size={20} />
-        </button>
-
-        <button
-          onClick={() => insertFormat('list')}
-          className="text-gray-400 hover:text-white transition-colors"
-          title="Bullet list"
-        >
-          <List size={20} />
-        </button>
-
-        <button
-          onClick={() => insertFormat('numbered-list')}
-          className="text-gray-400 hover:text-white transition-colors"
-          title="Numbered list"
-        >
-          <ListOrdered size={20} />
-        </button>
-
-        <button
-          onClick={() => insertFormat('link')}
-          className="text-gray-400 hover:text-white transition-colors"
-          title="Insert link"
-        >
-          <LinkIcon size={20} />
-        </button>
       </div>
 
       <textarea

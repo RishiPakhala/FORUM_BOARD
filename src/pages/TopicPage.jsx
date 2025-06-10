@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
 import ThreadCard from "../components/ThreadCard";
-import { Smile, Bold, Italic, List, ListOrdered, Link2 } from "lucide-react";
+import { Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import Header from "../components/Header";
@@ -137,21 +137,6 @@ const TopicPage = () => {
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
                   <Smile size={20} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <Bold size={20} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <Italic size={20} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <List size={20} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <ListOrdered size={20} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <Link2 size={20} />
                 </Button>
               </div>
               <Button onClick={handlePost} className="bg-blue-500 hover:bg-blue-600">
