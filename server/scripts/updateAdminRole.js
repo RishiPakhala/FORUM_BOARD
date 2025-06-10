@@ -5,7 +5,6 @@ const AdminLog = require('../models/AdminLog');
 
 // Load environment variables
 dotenv.config();
-
 const email = "sanjaychandra435@gmail.com";
 
 async function run() {
@@ -22,24 +21,36 @@ async function run() {
   }
 
   // 2. Update role to admin if not already
+  let updated = false;
   if (user.role !== "admin") {
     user.role = "admin";
     await user.save();
+    updated = true;
     console.log("User role updated to admin.");
   } else {
     console.log("User is already admin.");
   }
 
-  // 3. Create an admin log entry
-  await AdminLog.create({
+  // 3. Create an admin log entry (only if not already present)
+  const existingLog = await AdminLog.findOne({
     adminId: user._id,
     action: "user_management",
-    description: `User ${user.email} promoted to admin via script`,
-    details: { promotedBy: "system/script", userId: user._id },
-    role: "admin"
+    description: { $regex: user.email }
   });
 
-  console.log("Admin log entry created.");
+  if (!existingLog) {
+    await AdminLog.create({
+      adminId: user._id,
+      action: "user_management",
+      description: `User ${user.email} promoted to admin via script`,
+      details: { promotedBy: "system/script", userId: user._id },
+      role: "admin"
+    });
+    console.log("Admin log entry created.");
+  } else {
+    console.log("Admin log entry already exists.");
+  }
+
   process.exit(0);
 }
 
