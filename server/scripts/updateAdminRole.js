@@ -1,43 +1,46 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const User = require('../models/User');
+const AdminLog = require('../models/AdminLog');
 
 // Load environment variables
 dotenv.config();
 
-const updateUserToAdmin = async (email) => {
-  try {
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+const email = "sanjaychandra435@gmail.com";
 
-    // Find and update the user
-    const user = await User.findOneAndUpdate(
-      { email: email },
-      { role: 'admin' },
-      { new: true }
-    );
+async function run() {
+  await mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
 
-    if (!user) {
-      console.error('User not found');
-      process.exit(1);
-    }
-
-    console.log(`Successfully updated ${email} to admin role`);
-    process.exit(0);
-  } catch (error) {
-    console.error('Error updating user role:', error);
+  // 1. Find the user
+  const user = await User.findOne({ email });
+  if (!user) {
+    console.error("User not found");
     process.exit(1);
   }
-};
 
-// Get email from command line argument
-const email = process.argv[2];
-if (!email) {
-  console.error('Please provide an email address');
-  process.exit(1);
+  // 2. Update role to admin if not already
+  if (user.role !== "admin") {
+    user.role = "admin";
+    await user.save();
+    console.log("User role updated to admin.");
+  } else {
+    console.log("User is already admin.");
+  }
+
+  // 3. Create an admin log entry
+  await AdminLog.create({
+    adminId: user._id,
+    action: "user_management",
+    description: `User ${user.email} promoted to admin via script`,
+    details: { promotedBy: "system/script", userId: user._id },
+    role: "admin"
+  });
+
+  console.log("Admin log entry created.");
+  process.exit(0);
 }
 
-updateUserToAdmin(email); 
+run(); 

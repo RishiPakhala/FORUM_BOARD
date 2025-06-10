@@ -1,61 +1,60 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Users, Bell, ExternalLink } from "lucide-react";
-import { getTrendingTopics } from "../../services/api";
+import { Users, ExternalLink } from "lucide-react";
+import { getTrendingCategories } from "../../services/api";
 import "./Rightbar.css";
 
-const defaultTopics = [
-  { name: "IoT", icon: "🌐" },
-  { name: "programming", icon: "💻" },
-  { name: "sports", icon: "⚽" },
-  { name: "gaming", icon: "🎮" },
-  { name: "technology", icon: "📱" },
-  { name: "science", icon: "🔬" },
-  { name: "business", icon: "💼" },
-  { name: "entertainment", icon: "🎬" },
-  { name: "health", icon: "🏥" },
-  { name: "education", icon: "📚" }
-];
-
-const defaultHappeningTopics = [
-  "World Cup 2023",
-  "Bitcoin News",
-  "ChatGPT Updates",
-  "Tech Layoffs",
-  "Gaming Awards"
-];
+// Map of category names to emoji icons
+const categoryIcons = {
+  sports: "⚽",
+  programming: "💻",
+  iot: "🌐",
+  general: "💬",
+  technology: "📱",
+  science: "🔬",
+  business: "💼",
+  entertainment: "🎬",
+  gaming: "🎮",
+  health: "🏥",
+  education: "📚",
+  lifestyle: "🌟",
+  news: "📰",
+  politics: "🏛️",
+  art: "🎨",
+  music: "🎵",
+  food: "🍽️",
+  travel: "✈️"
+};
 
 const Rightbar = ({ isLoggedIn }) => {
-  const [trendingTopics, setTrendingTopics] = useState(defaultTopics);
-  const [happeningNow, setHappeningNow] = useState(defaultHappeningTopics);
+  const [trendingCategories, setTrendingCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTrendingTopics();
+    fetchTrendingCategories();
+    // Refresh trending categories every 5 minutes
+    const interval = setInterval(fetchTrendingCategories, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchTrendingTopics = async () => {
+  const fetchTrendingCategories = async () => {
     try {
-      const response = await getTrendingTopics({ 
-        timeRange: '24h',
-        limit: 10,
-        status: ['trending']
-      });
-
-      const topics = response.data.topics;
+      const response = await getTrendingCategories({ timeRange: '24h' });
       
-      if (topics && topics.length > 0) {
-        // Map trending topics while keeping original names
-        const trending = topics.map((topic, index) => ({
-          name: topic.title, // Keep original title without transformation
-          icon: defaultTopics[index % defaultTopics.length].icon,
-          _id: topic._id
+      if (response.data) {
+        // Transform the data to include icons and format the display
+        const categories = response.data.map(category => ({
+          name: category.name,
+          icon: categoryIcons[category.name.toLowerCase()] || "💬",
+          totalComments: category.totalComments,
+          postCount: category.postCount,
+          latestPost: new Date(category.latestPost)
         }));
 
-        setTrendingTopics(trending);
+        setTrendingCategories(categories);
       }
     } catch (error) {
-      console.error('Error fetching trending topics:', error);
+      console.error('Error fetching trending categories:', error);
     } finally {
       setLoading(false);
     }
@@ -81,43 +80,25 @@ const Rightbar = ({ isLoggedIn }) => {
           <Users size={18} />
         </div>
         <div className="topic-list">
-          {trendingTopics.map((topic) => (
+          {trendingCategories.map((category) => (
             <Link 
-              key={topic._id || topic.name} 
-              to={`/topic/${topic.name}`}
+              key={category.name} 
+              to={`/category/${category.name}`}
               className="topic-item"
             >
-              <div className="topic-avatar">{topic.icon}</div>
-              <span className="topic-name">{topic.name}</span>
+              <div className="topic-avatar">{category.icon}</div>
+              <div className="topic-info">
+                <span className="topic-name">{category.name}</span>
+                <span className="topic-stats">
+                  {category.totalComments} comments • {category.postCount} posts
+                </span>
+              </div>
               <ExternalLink size={14} className="topic-icon" />
             </Link>
           ))}
-          <button className="more-link">see more</button>
-        </div>
-      </div>
-
-      <div className="rightbar-section">
-        <div className="section-header">
-          <h3 className="section-title">Whats Happenning?</h3>
-          <Bell size={18} />
-        </div>
-        <div className="topic-list">
-          {happeningNow.map((topic) => (
-            <Link 
-              key={topic} 
-              to={`/topic/${topic}`}
-              className="happening-item"
-            >
-              <div className="happening-content">
-                <span className="hashtag">#</span>
-                <span className="happening-title">{topic}</span>
-              </div>
-              <div className="happening-meta">
-                <span className="happening-time">Trending</span>
-                <ExternalLink size={14} className="happening-icon" />
-              </div>
-            </Link>
-          ))}
+          {trendingCategories.length === 0 && (
+            <div className="no-topics">No trending topics yet</div>
+          )}
         </div>
       </div>
     </div>

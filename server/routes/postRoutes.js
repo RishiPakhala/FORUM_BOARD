@@ -18,7 +18,8 @@ const {
   unsaveReply,
   checkReplySaved,
   getDistinctCategories,
-  getAllPosts
+  getAllPosts,
+  getTrendingCategories
 } = require('../controllers/postController');
 const auth = require('../middleware/authMiddleware');
 const admin = require('../middleware/adminMiddleware');
@@ -27,6 +28,9 @@ const admin = require('../middleware/adminMiddleware');
 router.route('/')
   .get(getPosts)
   .post(auth, createPost);
+
+// Get trending categories
+router.get('/trending-categories', getTrendingCategories);
 
 // Admin - Get all posts
 router.get('/all', auth, admin, getAllPosts);

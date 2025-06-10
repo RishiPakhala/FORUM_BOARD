@@ -595,4 +595,62 @@ exports.checkReplySaved = async (req, res) => {
     console.error('Error checking reply saved status:', error);
     res.status(500).json({ error: error.message });
   }
+};
+
+// Get trending categories based on number of comments (replies), considering recent comment activity
+exports.getTrendingCategories = async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    // Calculate time range
+    const now = new Date();
+    let timeThreshold;
+    switch (timeRange) {
+      case '24h':
+        timeThreshold = new Date(now - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        timeThreshold = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        timeThreshold = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        timeThreshold = new Date(now - 24 * 60 * 60 * 1000);
+    }
+
+    // Aggregate to get categories with their total comments and post counts
+    const trendingCategories = await Post.aggregate([
+      { $match: {
+          status: 'active',
+          $or: [
+            { createdAt: { $gte: timeThreshold } },
+            { 'replies.createdAt': { $gte: timeThreshold } }
+          ]
+        }
+      },
+      { $group: {
+          _id: '$category',
+          totalComments: { $sum: { $size: '$replies' } },
+          postCount: { $sum: 1 },
+          latestPost: { $max: '$createdAt' }
+        }
+      },
+      { $sort: { totalComments: -1, latestPost: -1 } },
+      { $limit: 10 },
+      { $project: {
+          _id: 0,
+          name: '$_id',
+          totalComments: 1,
+          postCount: 1,
+          latestPost: 1
+        }
+      }
+    ]);
+
+    res.json(trendingCategories);
+  } catch (error) {
+    console.error('Error getting trending categories:', error);
+    res.status(500).json({ error: 'Failed to get trending categories' });
+  }
 }; 

@@ -18,16 +18,16 @@ export const useAuth = () => {
       const loginTimestamp = localStorage.getItem('loginTimestamp');
       const lastActivityTimestamp = localStorage.getItem('lastActivityTimestamp');
       const currentTime = Date.now();
-      const twoMinutes = 2 * 60 * 1000; // 2 minutes in milliseconds
+      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
 
       console.log('Auth Check Debug:');
       console.log('Current Time:', new Date(currentTime).toLocaleString());
       console.log('Last Activity:', lastActivityTimestamp ? new Date(parseInt(lastActivityTimestamp)).toLocaleString() : 'No activity');
       console.log('Time Difference:', lastActivityTimestamp ? (currentTime - parseInt(lastActivityTimestamp)) / 1000 + ' seconds' : 'N/A');
 
-      // Check if user has been inactive for more than 2 minutes
-      if (lastActivityTimestamp && (currentTime - parseInt(lastActivityTimestamp, 10) > twoMinutes)) {
-        console.log('User inactive for more than 2 minutes. Logging out.');
+      // Check if user has been inactive for more than 5 minutes
+      if (lastActivityTimestamp && (currentTime - parseInt(lastActivityTimestamp, 10) > fiveMinutes)) {
+        console.log('User inactive for more than 5 minutes. Logging out.');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('loginTimestamp');

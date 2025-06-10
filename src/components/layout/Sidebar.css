@@ -5,6 +5,8 @@
   flex-direction: column;
   background-color: hsl(var(--sidebar-background));
   color: hsl(var(--sidebar-foreground));
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar-header {

@@ -416,4 +416,9 @@ export const search = (query) => {
   return api.get(`/search?q=${encodeURIComponent(query)}`);
 };
 
+// Get trending categories
+export const getTrendingCategories = (params = {}) => {
+  return api.get('/posts/trending-categories', { params });
+};
+
 export default api; 
