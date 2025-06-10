@@ -20,6 +20,8 @@ const ThreadsPage = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('general');
   const [categories, setCategories] = useState([]);
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -38,6 +40,22 @@ const ThreadsPage = () => {
       toast({
         title: "Error",
         description: "Failed to fetch threads",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchThreadsByCategory = async (category) => {
+    setLoading(true);
+    try {
+      const response = await getPosts({ category: category.toLowerCase() });
+      setThreads(response.data.posts);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to fetch threads for category: ${category}`,
         variant: "destructive",
       });
     } finally {
@@ -151,6 +169,38 @@ const ThreadsPage = () => {
     }
   };
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Error",
+        description: "Category name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const normalizedCategoryName = newCategoryName.charAt(0).toUpperCase() + newCategoryName.slice(1).toLowerCase();
+      const event = new CustomEvent('newCategory', {
+        detail: normalizedCategoryName
+      });
+      window.dispatchEvent(event);
+      setCategories(prevCategories => [...prevCategories, normalizedCategoryName]);
+      setNewCategoryName('');
+      setShowNewCategoryInput(false);
+      toast({
+        title: "Success",
+        description: "New category created!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create category",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <MainLayout>
       <div>
@@ -199,18 +249,46 @@ const ThreadsPage = () => {
                 </div>
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="ml-2 bg-gray-800 text-white border border-gray-700 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "create-new") {
+                      setShowNewCategoryInput(true);
+                      setSelectedCategory(""); // Clear selection for new category input
+                    } else {
+                      setSelectedCategory(value);
+                      setShowNewCategoryInput(false);
+                      // Optionally refetch threads for the selected category if not 'general'
+                      if (value !== 'general') {
+                        fetchThreadsByCategory(value);
+                      } else {
+                        fetchThreads(); // Refetch all threads if 'general' is selected
+                      }
+                    }
+                  }}
+                  className="bg-gray-800 text-white p-2 rounded-md"
                 >
                   {categories.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
                   ))}
+                  <option value="create-new">Create New Category</option>
                 </select>
+                {showNewCategoryInput && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      className="bg-gray-800 text-white p-2 rounded-md"
+                      placeholder="New Category Name"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                    />
+                    <Button onClick={handleCreateCategory}>Save</Button>
+                  </div>
+                )}
               </div>
-              <Button onClick={handlePost} className="bg-blue-500 hover:bg-blue-600">
-                POST
+              <Button onClick={handlePost} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                Post
               </Button>
             </div>
           </div>
